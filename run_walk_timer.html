@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Run Timer">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%234285f4'/%3E%3Ctext x='50' y='60' text-anchor='middle' fill='white' font-size='30'%3E🏃%3C/text%3E%3C/svg%3E">
+    <title>Run Timer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4285f4;
+            --secondary: #34a853;
+            --accent: #ea4335;
+            --warning: #fbbc04;
+            
+            --bg-primary: #fafbff;
+            --bg-secondary: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            
+            --run-color: #ef4444;
+            --walk-color: #06b6d4;
+            --fast-color: #f59e0b;
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            font-weight: 400;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 380px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 40px);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.025em;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .progress-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .progress-bar {
+            display: flex;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            background: var(--border-light);
+        }
+
+        .progress-segment {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: var(--border-medium);
+        }
+
+        .progress-segment.active {
+            background: var(--primary);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
+            transform: scaleY(1.5);
+            z-index: 1;
+        }
+
+        /* Activity Colors */
+        .run-color { background: var(--run-color); }
+        .walk-color { background: var(--walk-color); }
+        .fast-color { background: var(--fast-color); }
+
+        .run-color.active { 
+            background: var(--run-color);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+        }
+        .walk-color.active { 
+            background: var(--walk-color);
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.3);
+        }
+        .fast-color.active { 
+            background: var(--fast-color);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Main Display */
+        .main-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .week-selector {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .week-selector label {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .week-selector select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 400;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-medium);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>');
+            background-repeat: no-repeat;
+            background-position: left 12px center;
+            background-size: 16px;
+            padding-left: 40px;
+        }
+
+        .week-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+        }
+
+        .week-selector select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 8px;
+        }
+
+        /* Activity Display */
+        .activity-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            padding: 40px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .current-activity {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
+
+        .current-time {
+            font-size: 48px;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .progress-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* Activity State Colors */
+        .activity-run .current-activity { color: var(--run-color); }
+        .activity-walk .current-activity { color: var(--walk-color); }
+        .activity-fast .current-activity { color: var(--fast-color); }
+
+        /* Controls */
+        .controls {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-start {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-pause {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-reset {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #2d7d32;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background: #f9a825;
+        }
+
+        .btn-reset:hover:not(:disabled) {
+            background: var(--border-light);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status Messages */
+        .status-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-light);
+            animation: messageSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* Keep awake notice */
+        .keep-awake-notice {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            z-index: 100;
+            animation: fadeInUp 0.3s ease;
+            text-align: center;
+            max-width: 280px;
+            transition: opacity 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .current-time {
+                font-size: 40px;
+            }
+            
+            .activity-card {
+                padding: 32px 20px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .current-time {
+                font-size: 36px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                flex: none;
+            }
+        }
+
+        /* Focus styles */
+        .btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .week-selector select:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --text-primary: #f8fafc;
+                --text-secondary: #cbd5e1;
+                --text-muted: #64748b;
+                --border-light: #334155;
+                --border-medium: #475569;
+            }
+            
+            .week-selector select {
+                background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cbd5e1" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>');
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="app-title">Timer</div>
+            <div class="app-subtitle">אימון ריצה והליכה</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-label">התקדמות</div>
+            <div class="progress-bar" id="progressBar">
+                <!-- Segments will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Main Display -->
+        <div class="main-display">
+            <div class="week-selector">
+                <label for="weekSelect">בחר תכנית אימון</label>
+                <select id="weekSelect">
+                    <option value="1">שבוע 1: 8×[ריצה(1), הליכה(2)]</option>
+                    <option value="2">שבוע 2: 6×[ריצה(2), הליכה(2)]</option>
+                    <option value="3">שבוע 3: 6×[ריצה(3), הליכה(2)]</option>
+                    <option value="4">שבוע 4: 6×[ריצה(4), הליכה(1)]</option>
+                    <option value="5">שבוע 5: ריצה(20)</option>
+                    <option value="6">שבוע 6: 6×[ריצה(3), הליכה(2)] + ריצה(20)</option>
+                    <option value="7">שבוע 7: ריצה(25)</option>
+                    <option value="8">שבוע 8: ריצה(30)</option>
+                    <option value="9">שבוע 9: 3×[ריצה(25), מהיר(2), הליכה(2)]</option>
+                    <option value="10">שבוע 10: ריצה(40)</option>
+                    <option value="11">שבוע 11: 4×[ריצה(30), מהיר(2), הליכה(2)]</option>
+                    <option value="12">שבוע 12: ריצה(50)</option>
+                </select>
+            </div>
+
+            <div class="activity-card" id="activityCard">
+                <div class="current-activity" id="currentActivity">מוכן להתחלה</div>
+                <div class="current-time" id="currentTime">00:00</div>
+                <div class="progress-info" id="progressInfo">בחר תכנית ולחץ התחל</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-start" id="startBtn">התחל</button>
+            <button class="btn btn-pause" id="pauseBtn" disabled>השהה</button>
+            <button class="btn btn-reset" id="resetBtn">איפוס</button>
+        </div>
+    </div>
+
+    <script>
+        class RunWalkTimer {
+            constructor() {
+                this.workouts = {
+                    1: [],
+                    2: [],
+                    3: [],
+                    4: [],
+                    5: [['Run', 20]],
+                    6: [],
+                    7: [['Run', 25]],
+                    8: [['Run', 30]],
+                    9: [],
+                    10: [['Run', 40]],
+                    11: [],
+                    12: [['Run', 50]]
+                };
+
+                // Build workouts
+                for (let i = 0; i < 8; i++) {
+                    this.workouts[1].push(['Run', 1], ['Walk', 2]);
+                }
+
+                for (let i = 0; i < 6; i++) {
+                    this.workouts[2].push(['Run', 2], ['Walk', 2]);
+                }
+
+                for (let i = 0; i < 6; i++) {
+                    this.workouts[3].push(['Run', 3], ['Walk', 2]);
+                }
+
+                for (let i = 0; i < 6; i++) {
+                    this.workouts[4].push(['Run', 4], ['Walk', 1]);
+                }
+
+                for (let i = 0; i < 6; i++) {
+                    this.workouts[6].push(['Run', 3], ['Walk', 2]);
+                }
+                this.workouts[6].push(['Run', 20]);
+
+                for (let i = 0; i < 3; i++) {
+                    this.workouts[9].push(['Run', 25], ['Fast', 2], ['Walk', 2]);
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    this.workouts[11].push(['Run', 30], ['Fast', 2], ['Walk', 2]);
+                }
+
+                this.currentWorkout = [];
+                this.currentSegment = 0;
+                this.remainingTime = 0;
+                this.isRunning = false;
+                this.totalTime = 0;
+                this.elapsedTime = 0;
+                this.audioContext = null;
+
+                this.initElements();
+                this.bindEvents();
+                this.updateWorkout();
+            }
+
+            initElements() {
+                this.weekSelect = document.getElementById('weekSelect');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.currentActivity = document.getElementById('currentActivity');
+                this.currentTime = document.getElementById('currentTime');
+                this.progressInfo = document.getElementById('progressInfo');
+                this.progressBar = document.getElementById('progressBar');
+                this.activityCard = document.getElementById('activityCard');
+            }
+
+            bindEvents() {
+                this.weekSelect.addEventListener('change', () => this.updateWorkout());
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+            }
+
+            updateWorkout() {
+                const week = parseInt(this.weekSelect.value);
+                this.currentWorkout = this.workouts[week];
+                this.reset();
+                this.generateProgressBar();
+            }
+
+            generateProgressBar() {
+                this.progressBar.innerHTML = '';
+                this.totalTime = this.currentWorkout.reduce((sum, [, duration]) => sum + duration * 60, 0);
+
+                this.currentWorkout.forEach(([activity, duration], index) => {
+                    const segment = document.createElement('div');
+                    segment.className = `progress-segment ${activity.toLowerCase()}-color`;
+                    segment.style.width = `${(duration * 60 / this.totalTime) * 100}%`;
+                    segment.id = `segment-${index}`;
+                    this.progressBar.appendChild(segment);
+                });
+            }
+
+            start() {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                this.requestWakeLock();
+                this.showKeepAwakeNotice();
+                this.requestNotificationPermission();
+
+                if (this.currentWorkout.length === 0) {
+                    this.showMessage('בחר תכנית אימון תחילה');
+                    return;
+                }
+
+                this.isRunning = true;
+                this.startBtn.disabled = true;
+                this.pauseBtn.disabled = false;
+                this.weekSelect.disabled = true;
+
+                if (this.remainingTime === 0) {
+                    this.startSegment();
+                }
+
+                this.timer = setInterval(() => this.tick(), 1000);
+                this.startTime = Date.now() - (this.elapsedTime * 1000);
+            }
+
+            pause() {
+                this.isRunning = false;
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                clearInterval(this.timer);
+            }
+
+            reset() {
+                this.isRunning = false;
+                this.currentSegment = 0;
+                this.remainingTime = 0;
+                this.elapsedTime = 0;
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                this.weekSelect.disabled = false;
+
+                clearInterval(this.timer);
+                this.updateDisplay();
+                this.updateProgressBar();
+                this.releaseWakeLock();
+            }
+
+            startSegment() {
+                if (this.currentSegment >= this.currentWorkout.length) {
+                    this.complete();
+                    return;
+                }
+
+                const [activity, duration] = this.currentWorkout[this.currentSegment];
+                this.remainingTime = duration * 60;
+                this.currentActivity.textContent = this.getActivityText(activity);
+                this.activityCard.className = `activity-card activity-${activity.toLowerCase()}`;
+                this.updateProgressBar();
+            }
+
+            tick() {
+                if (!this.isRunning) return;
+
+                const now = Date.now();
+                const expectedElapsed = Math.floor((now - this.startTime) / 1000);
+                
+                if (expectedElapsed > this.elapsedTime + 5) {
+                    const missedTime = expectedElapsed - this.elapsedTime;
+                    this.elapsedTime = expectedElapsed;
+                    this.remainingTime = Math.max(0, this.remainingTime - missedTime + 1);
+                    this.sendNotification('האפליקציה חזרה לפעילות');
+                } else {
+                    this.remainingTime--;
+                    this.elapsedTime++;
+                }
+
+                if (this.remainingTime <= 0) {
+                    this.playBeep();
+                    const [activity] = this.currentWorkout[this.currentSegment] || ['', 0];
+                    this.sendNotification(`סיום ${this.getActivityText(activity)}`);
+                    this.currentSegment++;
+                    this.startSegment();
+                } else {
+                    this.updateDisplay();
+                }
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.remainingTime / 60);
+                const seconds = this.remainingTime % 60;
+                this.currentTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (this.currentWorkout.length > 0) {
+                    this.progressInfo.textContent = `שלב ${this.currentSegment + 1} מתוך ${this.currentWorkout.length}`;
+                } else {
+                    this.progressInfo.textContent = 'בחר תכנית ולחץ התחל';
+                    this.currentActivity.textContent = 'מוכן להתחלה';
+                    this.currentTime.textContent = '00:00';
+                    this.activityCard.className = 'activity-card';
+                }
+            }
+
+            updateProgressBar() {
+                document.querySelectorAll('.progress-segment').forEach((segment, index) => {
+                    segment.classList.toggle('active', index === this.currentSegment);
+                });
+            }
+
+            playBeep() {
+                if (!this.audioContext) return;
+
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    oscillator.frequency.value = 880;
+                    oscillator.type = 'sine';
+
+                    const now = this.audioContext.currentTime;
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.25);
+
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.25);
+                } catch (error) {
+                    console.log('Audio error:', error);
+                }
+            }
+
+            complete() {
+                this.showMessage('🎉 אימון הושלם בהצלחה! 🎉');
+                this.releaseWakeLock();
+                this.reset();
+            }
+
+            requestWakeLock() {
+                console.log('Using simple keep-awake method');
+                this.keepAwakeInterval = setInterval(() => {
+                    document.body.style.backgroundColor = document.body.style.backgroundColor || 'transparent';
+                }, 30000);
+            }
+
+            releaseWakeLock() {
+                if (this.keepAwakeInterval) {
+                    clearInterval(this.keepAwakeInterval);
+                    this.keepAwakeInterval = null;
+                    console.log('Keep-awake method stopped');
+                }
+            }
+
+            requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }
+
+            sendNotification(message) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Timer', {
+                        body: message,
+                        icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="40" fill="%234285f4"/%3E%3Ctext x="50" y="60" text-anchor="middle" fill="white" font-size="30"%3E🏃%3C/text%3E%3C/svg%3E',
+                        silent: false
+                    });
+                }
+            }
+
+            showKeepAwakeNotice() {
+                if (this.keepAwakeNotice) return;
+                
+                this.keepAwakeNotice = document.createElement('div');
+                this.keepAwakeNotice.className = 'keep-awake-notice';
+                this.keepAwakeNotice.textContent = '💡 שמור על המסך פתוח במהלך האימון';
+                document.body.appendChild(this.keepAwakeNotice);
+                
+                setTimeout(() => {
+                    if (this.keepAwakeNotice) {
+                        this.keepAwakeNotice.style.opacity = '0';
+                        setTimeout(() => {
+                            if (this.keepAwakeNotice) {
+                                this.keepAwakeNotice.remove();
+                                this.keepAwakeNotice = null;
+                            }
+                        }, 300);
+                    }
+                }, 5000);
+            }
+
+            getActivityText(activity) {
+                const texts = {
+                    'Run': 'ריצה',
+                    'Walk': 'הליכה', 
+                    'Fast': 'ריצה מהירה'
+                };
+                return texts[activity] || activity;
+            }
+
+            showMessage(message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'status-message';
+                messageEl.textContent = message;
+                document.body.appendChild(messageEl);
+                setTimeout(() => messageEl.remove(), 3000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new RunWalkTimer();
+        });
+
+        document.addEventListener('touchstart', function(event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 500);
+        });
+
+        function vibrate(pattern = [100]) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn') && !e.target.disabled) {
+                vibrate([30]);
+            }
+        });
+    </script>
+</body>
+</html>
